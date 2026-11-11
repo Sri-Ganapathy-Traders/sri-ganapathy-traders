@@ -32,24 +32,55 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (posFTToggle && externalCollapse) {
-    posFTToggle.addEventListener("click", () => {
-      const isExpanded = posFTToggle.getAttribute("aria-expanded") === "true";
-      posFTToggle.setAttribute("aria-expanded", !isExpanded);
-      posFTToggle.classList.toggle("active");
-      externalCollapse.classList.toggle("show");
-    });
-  }
+    let savedScrollY = 0;
 
-  const mobileNavLinks = externalCollapse ? externalCollapse.querySelectorAll("a") : [];
-  mobileNavLinks.forEach(link => {
-    link.addEventListener("click", () => {
-      externalCollapse.classList.remove("show");
-      if (posFTToggle) {
-        posFTToggle.setAttribute("aria-expanded", "false");
-        posFTToggle.classList.remove("active");
+    const setMobileMenu = (open) => {
+      const isOpen = externalCollapse.classList.contains("show");
+      if (open === isOpen) return;
+
+      if (open) {
+        savedScrollY = window.scrollY;
+        document.body.style.top = `-${savedScrollY}px`;
+      } else {
+        document.body.style.top = "";
+      }
+
+      externalCollapse.classList.toggle("show", open);
+      posFTToggle.classList.toggle("active", open);
+      posFTToggle.setAttribute("aria-expanded", String(open));
+      document.documentElement.classList.toggle("menu-open", open);
+      document.body.classList.toggle("menu-open", open);
+
+      if (!open) {
+        window.scrollTo({ top: savedScrollY, behavior: "instant" });
+      }
+    };
+
+    posFTToggle.addEventListener("click", () => {
+      setMobileMenu(!externalCollapse.classList.contains("show"));
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && externalCollapse.classList.contains("show")) {
+        setMobileMenu(false);
       }
     });
-  });
+
+    const desktopQuery = window.matchMedia("(min-width: 993px)");
+    const onDesktopChange = (e) => {
+      if (e.matches) setMobileMenu(false);
+    };
+    if (desktopQuery.addEventListener) {
+      desktopQuery.addEventListener("change", onDesktopChange);
+    } else if (desktopQuery.addListener) {
+      desktopQuery.addListener(onDesktopChange);
+    }
+
+    const mobileNavLinks = externalCollapse.querySelectorAll("a");
+    mobileNavLinks.forEach(link => {
+      link.addEventListener("click", () => setMobileMenu(false));
+    });
+  }
 
   // 3. STICKY NAVBAR LOGIC (Only runs on desktop view layout)
   window.addEventListener("scroll", () => {
@@ -71,9 +102,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       menuSpans.forEach(s => s.style.background = "#2E7D32");
     } else {
-      navbar.style.background = "rgba(255, 255, 255, 0.25)";
-      navbar.style.boxShadow = "0 4px 30px rgba(0,0,0,0.1)";
-      navbar.style.border = "1px solid rgba(255, 255, 255, 0.2)";
+      navbar.style.background = "rgba(255, 255, 255, 0.16)";
+      navbar.style.boxShadow = "0 4px 24px rgba(0,0,0,0.1)";
+      navbar.style.border = "1px solid rgba(255, 255, 255, 0.18)";
       navLinks.forEach(a => a.style.color = "#fff");
       if (btn) {
         btn.style.background = "#fff";
@@ -194,8 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const message = contactForm.querySelector("textarea").value.trim();
 
       if (!name) { alert("Please enter your name."); return; }
-      if (!email) { alert("Please enter your email."); return; }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert("Please enter a valid email address."); return; }
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert("Please enter a valid email address."); return; }
       if (!phone) { alert("Please enter your phone number."); return; }
       if (!message) { alert("Please enter your message."); return; }
 
@@ -219,4 +249,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const speed = row.getAttribute("data-speed") || "45";
     row.style.setProperty("--speed", speed + "s");
   });
+
+  // 9. AUTO-UPDATE COPYRIGHT YEAR
+  const copyrightYear = document.getElementById("copyrightYear");
+  if (copyrightYear) {
+    copyrightYear.textContent = new Date().getFullYear();
+  }
 });
